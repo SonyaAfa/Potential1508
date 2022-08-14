@@ -264,6 +264,14 @@ def print_graph_matrix(Samples):
     sys.stdout = original_stdout
     FileGraphMatrix.close()
 
+def plot_density(s, x0, y0, x1, y1, h, sigma, D, type):
+    X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma, D, type)
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    plt.title('Density sigma')
+    #ax.text(0,1,'dfds')
+#    plt.text(0.1,0.1,'sigma is {}'.format(sigma))
+    plot_surface(X, Y, DensValues, fig, ax)
+
 def main():
     #s=np.loadtxt('UMAP_pr.txt')#читаю данные из файла как матрицу
     s = np.loadtxt('Samples2')  # читаю данные из файла как матрицу
@@ -303,10 +311,12 @@ def main():
     sigma=0.3
     D=1
 
-    X,Y,DensValues=create_function_grid(s, x0, y0, x1, y1, h, h, sigma,D,'gaussian_density')
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
     plt.title('Density sigma=0.3')
-    plot_surface(X, Y, DensValues, fig, ax)
+    #X,Y,DensValues=create_function_grid(s, x0, y0, x1, y1, h, h, sigma,D,'gaussian_density')
+    #fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    #plt.title('Density sigma')
+    #plot_surface(X, Y, DensValues, fig, ax)
     #plt.savefig("Density sigma=03.png")
 
     sigma = 0.7
