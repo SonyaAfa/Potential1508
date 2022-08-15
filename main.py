@@ -264,13 +264,17 @@ def print_graph_matrix(Samples):
     sys.stdout = original_stdout
     FileGraphMatrix.close()
 
+#процедура рисующая график плотности или потенциала
 def plot_density(s, x0, y0, x1, y1, h, sigma, D, type):
     X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma, D, type)
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
     #plt.title('Density sigma=%i'%sigma)
-    plt.title('Density sigma=' +str(sigma))
-    #ax.text(0,1,'dfds')
-#    plt.text(0.1,0.1,'sigma is {}'.format(sigma))
+    if type=='gaussian_density':
+        plt.title('Density, sigma=' + str(sigma))
+    if type=='evkl_density':
+        plt.title('Density evkl')
+    if type=='boltzmann_potential_gaussian':
+        plt.title('boltzmann_potential_gaussian, sigma='+str(sigma))
     plot_surface(X, Y, DensValues, fig, ax)
 
 def main():
@@ -301,31 +305,24 @@ def main():
     plt.show()
 
     #DensV=create_small_density_vector(s,m,n,h,x0,y0,GridPoints)
-
     P=PsevdoInverseL_K#псевдообратная матрица к лапласиану графа
 
     #плотность
-
     x0,y0,x1,y1=sample_area(s)
     h=0.25
     N=1
-    sigma=0.3
+    #sigma=0.3
     D=1
 
     sigma_arr=np.array([0.3,0.7,1,2])
+    sigma_arr = np.array([0.3, 0.7])
     for sigma in sigma_arr:
         plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
+        plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
+    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'evkl_density')
 
 
-    X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma,D, 'evkl_density')
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    plt.title('Density evkl')
-    plot_surface(X, Y, DensValues, fig, ax)
 
-    X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma,D, 'boltzmann_potential_gaussian')
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    plt.title('boltzmann_potential_gaussian')
-    plot_surface(X, Y, DensValues, fig, ax)
 
     X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma, D, 'boltzmann_potential_evkl')
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
