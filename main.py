@@ -200,18 +200,6 @@ def draw_smooth_functiong_general(x0,x1,hx,y0,y1,hy,Samples,Values,N,fig,ax):#
     #ax=sns.heatmap(Z,center=0,cmap='YlGnBu')
     plt.show()
 
-#процудура, рисующая 3д график функции
-#def draw_function(x0,y0,x1,y1,h,func,fig,ax):
- #   X = np.arange(x0, x1, h)  # (старт, финиш, шаг бинаризации)
- #   Y = np.arange(y0, y1, h)  # (старт, финиш, шаг бинаризации)
- #   # определяем 2D-сетку
- #   X, Y = np.meshgrid(X, Y)
- #   Z = np.zeros((len(Y), len(X[1])))
-
- #   for l in range(len(X[1])):
-  #      for t in range(len(Y)):
-  #          Z[t, l] = func(X[t,l],Y[t,l])
-  #  plot_surface(X, Y, Z,fig,ax)
 
 #процудура перечисления матриц графа, записывает их  в файл GraphMatrix
 def print_graph_matrix(Samples):
