@@ -201,17 +201,17 @@ def draw_smooth_functiong_general(x0,x1,hx,y0,y1,hy,Samples,Values,N,fig,ax):#
     plt.show()
 
 #процудура, рисующая 3д график функции
-def draw_function(x0,y0,x1,y1,h,func,fig,ax):
-    X = np.arange(x0, x1, h)  # (старт, финиш, шаг бинаризации)
-    Y = np.arange(y0, y1, h)  # (старт, финиш, шаг бинаризации)
-    # определяем 2D-сетку
-    X, Y = np.meshgrid(X, Y)
-    Z = np.zeros((len(Y), len(X[1])))
+#def draw_function(x0,y0,x1,y1,h,func,fig,ax):
+ #   X = np.arange(x0, x1, h)  # (старт, финиш, шаг бинаризации)
+ #   Y = np.arange(y0, y1, h)  # (старт, финиш, шаг бинаризации)
+ #   # определяем 2D-сетку
+ #   X, Y = np.meshgrid(X, Y)
+ #   Z = np.zeros((len(Y), len(X[1])))
 
-    for l in range(len(X[1])):
-        for t in range(len(Y)):
-            Z[t, l] = func(X[t,l],Y[t,l])
-    plot_surface(X, Y, Z,fig,ax)
+ #   for l in range(len(X[1])):
+  #      for t in range(len(Y)):
+  #          Z[t, l] = func(X[t,l],Y[t,l])
+  #  plot_surface(X, Y, Z,fig,ax)
 
 #процудура перечисления матриц графа, записывает их  в файл GraphMatrix
 def print_graph_matrix(Samples):
@@ -268,6 +268,7 @@ def plot_density(s, x0, y0, x1, y1, h, sigma, D, type):
 def main():
     #s=np.loadtxt('UMAP_pr.txt')#читаю данные из файла как матрицу
     s = np.loadtxt('Samples2')  # читаю данные из файла как матрицу
+    s = np.loadtxt('Samples-test')
 
     print('my s',s)
     print_graph_matrix(s)
