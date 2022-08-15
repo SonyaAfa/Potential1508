@@ -17,21 +17,7 @@ from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 import sys #для записи в файл
 from scipy.spatial import Delaunay #for tesselation and triangulation
-import seaborn as sns #for heatmap
-#
-import mpmath
-#from mpmath import*# почему-то на эту строку выдаются ошибки
-#для рисования картинок с кружочками
-import matplotlib.patches
-import matplotlib.path
-from matplotlib.lines import Line2D
 
-
-import argparse#from Vadims code
-import os#from Vadims code
-import pandas as pd#from Vadims code
-import sympy
-from sympy import Symbol
 from sympy import *
 
 
