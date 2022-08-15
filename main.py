@@ -275,6 +275,8 @@ def plot_density(s, x0, y0, x1, y1, h, sigma, D, type):
         plt.title('Density evkl')
     if type=='boltzmann_potential_gaussian':
         plt.title('boltzmann_potential_gaussian, sigma='+str(sigma))
+    if type == 'boltzmann_potential_evkl':
+        plt.title('boltzmann_potential_evkl')
     plot_surface(X, Y, DensValues, fig, ax)
 
 def main():
@@ -315,36 +317,19 @@ def main():
     D=1
 
     sigma_arr=np.array([0.3,0.7,1,2])
-    sigma_arr = np.array([0.3, 0.7])
+    #sigma_arr = np.array([0.3, 2])
     for sigma in sigma_arr:
         plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
         plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
     plot_density(s, x0, y0, x1, y1, h, sigma, D, 'evkl_density')
+    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_evkl')
 
-
-
-
-    X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma, D, 'boltzmann_potential_evkl')
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    plt.title('boltzmann_potential_evkl')
-    plot_surface(X, Y, DensValues, fig, ax)
-
-
-
-
-    PotentialVector=potential_calculation_on_graph(s, P, sigma)
-
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    plt.title('Smooth PotentialLandscape')
-    draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, fig, ax)
-
-
-    #посомотрим что такое потенциал Больцмана
-    #fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    #plt.title('Boltzmann')
-    def b_p(x,y):
-        return boltzmann_potential(x,y,s,sigma,1)
-    #draw_function(x0,y0,x0+m*h,y0+n*h,hh,b_p,fig,ax)
+    #вычисление потенциала с помошью Лапласиана графа
+    for sigma in sigma_arr:
+        PotentialVector = potential_calculation_on_graph(s, P, sigma)
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+        plt.title('Smooth PotentialLandscape, sigma='+str(sigma))
+        draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, fig, ax)
 
 
     #построение и изображение диаграммы Вороного
@@ -361,13 +346,13 @@ def main():
     #print(tri.simplices)
 
     #посомотрим что такое sinc2d
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    plt.title('Sinc2d')
+    #fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    #plt.title('Sinc2d')
 
-    def f(x, y):
-        return sinc2d(x, y, 3)
+    #def f(x, y):
+    #    return sinc2d(x, y, 3)
 
-    draw_function(-5, -5, 5, 5, h, f,fig,ax)
+    #draw_function(-5, -5, 5, 5, h, f,fig,ax)
 
 
 
