@@ -284,10 +284,6 @@ def main():
     s = np.loadtxt('Samples2')  # читаю данные из файла как матрицу
 
     print('my s',s)
-
-    sigma=0.3
-    #print('symb_gaussian_kernel(mu1, mu2, sigma)',symb_gaussian_kernel(1, 0, sigma))
-    #print('symb_density',symb_density(s,sigma))
     print_graph_matrix(s)
 
     df=s
@@ -354,12 +350,6 @@ def main():
 
     #draw_function(-5, -5, 5, 5, h, f,fig,ax)
 
-
-
-
-#fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-#plt.title('erunda')
-#plot_surface(X, Y, Z)
 if __name__ == '__main__':
     main()
 
