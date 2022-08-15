@@ -267,7 +267,8 @@ def print_graph_matrix(Samples):
 def plot_density(s, x0, y0, x1, y1, h, sigma, D, type):
     X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma, D, type)
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    plt.title('Density sigma')
+    #plt.title('Density sigma=%i'%sigma)
+    plt.title('Density sigma=' +str(sigma))
     #ax.text(0,1,'dfds')
 #    plt.text(0.1,0.1,'sigma is {}'.format(sigma))
     plot_surface(X, Y, DensValues, fig, ax)
@@ -311,31 +312,10 @@ def main():
     sigma=0.3
     D=1
 
-    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
-    plt.title('Density sigma=0.3')
-    #X,Y,DensValues=create_function_grid(s, x0, y0, x1, y1, h, h, sigma,D,'gaussian_density')
-    #fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    #plt.title('Density sigma')
-    #plot_surface(X, Y, DensValues, fig, ax)
-    #plt.savefig("Density sigma=03.png")
+    sigma_arr=np.array([0.3,0.7,1,2])
+    for sigma in sigma_arr:
+        plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
 
-    sigma = 0.7
-    X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma, D, 'gaussian_density')
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    plt.title('Density sigma=0.7')
-    plot_surface(X, Y, DensValues, fig, ax)
-
-    sigma = 1
-    X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma, D, 'gaussian_density')
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    plt.title('Density sigma=1')
-    plot_surface(X, Y, DensValues, fig, ax)
-
-    sigma = 2
-    X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma, D, 'gaussian_density')
-    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    plt.title('Density sigma=2')
-    plot_surface(X, Y, DensValues, fig, ax)
 
     X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma,D, 'evkl_density')
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
