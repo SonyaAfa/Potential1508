@@ -22,6 +22,13 @@ from VadimsCodeModified import get_rectangles_inside_voronoi,add_to_plot_voronoi
     add_to_plot_rectangles
 
 
+#процедура вычисляющая наименьшее и наибольшее расстояние между точками
+def min_max_dist(Samples):
+    MinDist = distance.pdist(Samples).min()  # наименьшее расстоние между точками из samples
+    MaxDist = distance.pdist(Samples).max()  # наименьшее расстоние между точками из samples
+    return MinDist,MaxDist
+
+
 #вычисление значения  Гауссова ядра в точке х,y
 def gaussian_kernel(x,y,mu1,mu2,sigma):
     '''(x,y) --- точка в которой вычисляем значение'''
@@ -281,9 +288,9 @@ def main():
 
     sigma_arr=np.array([0.3,0.7,1,2])
     sigma_arr = np.array([0.3, 2])
-    #for sigma in sigma_arr:
-       # plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
-       # plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
+    for sigma in sigma_arr:
+        plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
+        plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
 
     #fig, axs=plt.subplots(2)
     #axs[0].set_title('evkl_density')
@@ -295,20 +302,23 @@ def main():
 
 
 
-    RectSizes=np.ones((len(s),2))
-    for i in range(len(s)):
-        RectSizes[i]=[10*math.pi,1]
-    print('rect',RectSizes)
+    #RectSizes=np.ones((len(s),2))
+    #for i in range(len(s)):
+    #    RectSizes[i]=[10*math.pi,1]
+    #print('rect',RectSizes)
+
+
+
     #вычисление потенциала с помошью Лапласиана графа в точках samples и сглаживание
-    for sigma in sigma_arr:
-        PotentialVector = potential_calculation_on_graph(s, P, sigma)
-        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-        plt.title('Smooth PotentialLandscape, sigma='+str(sigma)+'trype of smoothing= homogenous')
-        draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N,'homogenous',
-                                      RectSizes,
-                                      'Smooth PotentialLandscape, sigma='+str(sigma)+'trype of smoothing= homogenous')
-        draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles',RectSizes,
-                                      'Smooth PotentialLandscape, sigma='+str(sigma)+'trype of smoothing= rectangles')
+    #for sigma in sigma_arr:
+    #    PotentialVector = potential_calculation_on_graph(s, P, sigma)
+       # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+      #  #plt.title('Smooth PotentialLandscape, sigma='+str(sigma)+'trype of smoothing= homogenous')
+       # draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N,'homogenous',
+        #                              RectSizes,
+        #                              'Smooth PotentialLandscape, sigma='+str(sigma)+'type of smoothing= homogenous')
+        #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles',RectSizes,
+        #                              'Smooth PotentialLandscape, sigma='+str(sigma)+'type of smoothing= rectangles')
 
 
     #построение и изображение диаграммы Вороного
@@ -347,12 +357,10 @@ def main():
     # вычисление потенциала с помошью Лапласиана графа в точках samples и сглаживание
     for sigma in sigma_arr:
         PotentialVector = potential_calculation_on_graph(s, P, sigma)
-        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-        plt.title('Smooth PotentialLandscape, sigma=' + str(sigma) + 'trype of smoothing= homogenous')
-        #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
-                      #                RectSizes,
-                           #           'Smooth PotentialLandscape, sigma=' + str(
-                            #              sigma) + 'trype of smoothing= homogenous')
+        draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
+                                      RectSizes,
+                                      'Smooth PotentialLandscape, sigma=' + str(
+                                          sigma) + 'trype of smoothing= homogenous')
         draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
                                       'Smooth PotentialLandscape, sigma=' + str(
                                           sigma) + 'trype of smoothing= rectangles')
