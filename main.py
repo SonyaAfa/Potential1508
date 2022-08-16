@@ -10,7 +10,6 @@ from matplotlib.pyplot import scatter
 import random
 from sklearn import datasets#новая строка из документации к graphtools
 import graphtools as gt
-from scipy import signal#нужно для построения Вейвлета
 from scipy.spatial import Voronoi, voronoi_plot_2d #для построения диаграммы Вороного
 #для картинок
 from matplotlib import cm
@@ -19,7 +18,8 @@ import sys #для записи в файл
 from scipy.spatial import Delaunay #for tesselation and triangulation
 
 from sympy import *
-
+from VadimsCodeModified import get_rectangles_inside_voronoi,add_to_plot_voronoi_diagram,\
+    add_to_plot_rectangles
 
 
 #вычисление значения  Гауссова ядра в точке х,y
@@ -29,10 +29,6 @@ def gaussian_kernel(x,y,mu1,mu2,sigma):
     distance=np.linalg.norm(difference)#норма вектора разности
     K_sigma=1/(sigma*math.sqrt(2*math.pi))*norm.pdf(distance,loc=0,scale=sigma)
     return K_sigma
-
-
-
-
      #return 1/(2*math.pi*sigma**2)*math.exp(-((x-mu1)**2+(y-mu2)**2)/(2*sigma**2))
 
 #процудура нахождения плотности в точке (x,y), рассчитаная как сумма Гауссиан по списку точек Samples
@@ -58,6 +54,8 @@ def evkl_density(Samples,x,y):
             print('point is sample point')
     return d
 
+#процедура создающая массивы точек (и значений в них), чтобы по ним нарисовать график
+#type= определяет значения какой функции брать
 def create_function_grid(Samples,x0,y0,x1,y1,hx,hy,sigma,D,type):
     X = np.arange(x0, x1, hx)  # (старт, финиш, шаг бинаризации)
     Y = np.arange(y0, y1, hy)  # (старт, финиш, шаг бинаризации)
@@ -113,29 +111,22 @@ def sample_area(Samples):
 
     return x0,y0,x1,y1
 
-
-#создадим вектор плотностей, соответствующий вершинам сетки,
-# которые являются ближайшими к  вершинам графа
-# (наверно это можно было сделать раньше и оптимальнне, но пока пусть так)
+#создадим вектор плотностей  в samples
 def create_small_density_vector(Samples,sigma):
     DensVector=[]
     for i in Samples:
         DensVector.append(density(Samples,i[0],i[1],sigma))
     return DensVector
 
-
-#процудура вычисления потенциала в точках графа (независимо от сетки)
+#процудура вычисления потенциала в точках графа
 def potential_calculation_on_graph(Samples,P,sigma):
     '''P --- psevdo inversre matrix for Laplacian'''
     #вычислим список плотностей в точках графа
     DensVector=create_small_density_vector(Samples,sigma)
     PotentialVector=[]
-    k=0
-    for i in Samples:
-        #вычислим потенциал как P*Dense
+    # вычислим потенциал как P*Dense
+    for k in range(len(Samples)):
         PotentialVector.append(np.dot(P[k],DensVector))
-        k+=1
-
     return PotentialVector
 
 #процедура, возвращающая потенциал по формуле Больцмана U=-Dln p(x,y),
@@ -148,15 +139,6 @@ def boltzmann_potential(x,y,Samples,sigma,D,type):
     return u
 
 
-
-#процедура создания массива значений функций potential и density для рисования
-#функция фозвращает
-            #X - список первых координат точек сетки
-            #Y- список вторых координат точек сетки
-            #DensityValue - список значений логарифма от плотности
-
-
-
 def sinc(x,N):
     if x==0:
         s=1
@@ -164,10 +146,6 @@ def sinc(x,N):
         s=math.sin(N*x)/(N*x)
     return s
 
-#
-def sinc2d(x,y,N):
-    f=sinc((np.linalg.norm([x,y])),N)
-    return f
 
 #гладкая функция, принимающая значения Values в точках Samples
 #Samples - список координат точек
@@ -178,9 +156,24 @@ def smoothing_function_sinc(Samples,Values,x,y,N):
         f+=Values[i]*sinc(x-Samples[i][0],N)*sinc(y-Samples[i][1],N)
     return f
 
-#нарисуем гладкую картинку (без сеток)
-def draw_smooth_functiong_general(x0,x1,hx,y0,y1,hy,Samples,Values,N,fig,ax):#
-    #fig, ax = plt.subplots(subplot_kw={"projection": "3d"})#почему-то эта строка не выполняется
+#гладкая функция, принимающая значения Values в точках Samples
+#сглаживание в соответствие со значениями массива RectSizes
+#Samples - список координат точек
+#Values --- список значений
+def smoothing_function_size_sinc(Samples,Values,x,y,RectSizes):
+    f=0
+    for i in range(len(Samples)):
+        a=RectSizes[i][0]/2
+        b=RectSizes[i][1]/2
+        f+=Values[i]*sinc(x-Samples[i][0],math.pi/a)*sinc(y-Samples[i][1],math.pi/b)
+    return f
+
+
+#нарисуем гладкую картинку
+def draw_smooth_functiong_general(x0,x1,hx,y0,y1,hy,Samples,Values,N,type_of_smoothing,RectSizes,tit):#
+    #tit - заглавие картинки
+    fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+    plt.title(tit)
     # Диапазоны по оси X и Y:
     X = np.arange(x0, x1, hx) # (старт, финиш, шаг бинаризации)
     Y = np.arange(y0, y1, hy) # (старт, финиш, шаг бинаризации)
@@ -189,13 +182,12 @@ def draw_smooth_functiong_general(x0,x1,hx,y0,y1,hy,Samples,Values,N,fig,ax):#
     #M=math.floor(n*h/hh)
     #N=math.floor(m*h/hh)
     Z = np.zeros((len(Y),len(X[1])))
-
     for l in range(len(X[1])):
         for t in range(len(Y)):
-            #print('l,t',l,t)
-            Z[t,l]=smoothing_function_sinc(Samples,Values,x0+l*hx,y0+t*hy,N)
-
-    #print('z',Z)
+            if type_of_smoothing=='homogenous':
+                Z[t, l] = smoothing_function_sinc(Samples, Values, x0 + l * hx, y0 + t * hy, N)
+            if type_of_smoothing == 'rectangles':
+                Z[t, l] = smoothing_function_size_sinc(Samples,Values,x0+l*hx,y0+t*hy,RectSizes)
     plot_surface(X, Y, Z,fig,ax)
     #ax=sns.heatmap(Z,center=0,cmap='YlGnBu')
     plt.show()
@@ -288,19 +280,35 @@ def main():
     D=1
 
     sigma_arr=np.array([0.3,0.7,1,2])
-    #sigma_arr = np.array([0.3, 2])
-    for sigma in sigma_arr:
-        plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
-        plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
-    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'evkl_density')
-    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_evkl')
+    sigma_arr = np.array([0.3, 2])
+    #for sigma in sigma_arr:
+       # plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
+       # plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
 
-    #вычисление потенциала с помошью Лапласиана графа
+    #fig, axs=plt.subplots(2)
+    #axs[0].set_title('evkl_density')
+    #axs[1].set_title('boltzmann_potential_evkl')
+    #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'evkl_density')
+    #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_evkl')
+
+
+
+
+
+    RectSizes=np.ones((len(s),2))
+    for i in range(len(s)):
+        RectSizes[i]=[10*math.pi,1]
+    print('rect',RectSizes)
+    #вычисление потенциала с помошью Лапласиана графа в точках samples и сглаживание
     for sigma in sigma_arr:
         PotentialVector = potential_calculation_on_graph(s, P, sigma)
         fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-        plt.title('Smooth PotentialLandscape, sigma='+str(sigma))
-        draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, fig, ax)
+        plt.title('Smooth PotentialLandscape, sigma='+str(sigma)+'trype of smoothing= homogenous')
+        draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N,'homogenous',
+                                      RectSizes,
+                                      'Smooth PotentialLandscape, sigma='+str(sigma)+'trype of smoothing= homogenous')
+        draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles',RectSizes,
+                                      'Smooth PotentialLandscape, sigma='+str(sigma)+'trype of smoothing= rectangles')
 
 
     #построение и изображение диаграммы Вороного
@@ -315,15 +323,39 @@ def main():
     plt.show()
 
     #print(tri.simplices)
+    vor = Voronoi(s)
+    # кусок из main VadimsCode
 
-    #посомотрим что такое sinc2d
-    #fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-    #plt.title('Sinc2d')
+    fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(5, 5), dpi=1000)
+    add_to_plot_voronoi_diagram(axs, vor)
 
-    #def f(x, y):
-    #    return sinc2d(x, y, 3)
+    rectangles = get_rectangles_inside_voronoi(vor)
+    print('lenrect', len(rectangles))
 
-    #draw_function(-5, -5, 5, 5, h, f,fig,ax)
+    add_to_plot_rectangles(axs, rectangles)
+    # plt.show()
+    plt.savefig('voronoi_rect.png', format='png')
+
+    RectSizes = np.ones((len(s), 2))
+    for i in range(len(s)):
+        if rectangles[i] != 1:
+            RectSizes[i] = [rectangles[i].width, rectangles[i].height]
+        else:
+            RectSizes[i] = [1, 1]
+    print('rect', RectSizes)
+
+    # вычисление потенциала с помошью Лапласиана графа в точках samples и сглаживание
+    for sigma in sigma_arr:
+        PotentialVector = potential_calculation_on_graph(s, P, sigma)
+        fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
+        plt.title('Smooth PotentialLandscape, sigma=' + str(sigma) + 'trype of smoothing= homogenous')
+        #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
+                      #                RectSizes,
+                           #           'Smooth PotentialLandscape, sigma=' + str(
+                            #              sigma) + 'trype of smoothing= homogenous')
+        draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
+                                      'Smooth PotentialLandscape, sigma=' + str(
+                                          sigma) + 'trype of smoothing= rectangles')
 
 if __name__ == '__main__':
     main()
