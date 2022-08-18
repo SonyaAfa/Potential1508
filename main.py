@@ -21,6 +21,9 @@ from sympy import *
 from VadimsCodeModified import get_rectangles_inside_voronoi,add_to_plot_voronoi_diagram,\
     add_to_plot_rectangles
 
+from statistics import median
+
+
 
 #процедура вычисляющая наименьшее и наибольшее расстояние между точками
 def min_max_dist(Samples):
@@ -252,10 +255,41 @@ def plot_density(s, x0, y0, x1, y1, h, sigma, D, type):
         plt.title('boltzmann_potential_evkl')
     plot_surface(X, Y, DensValues, fig, ax)
 
+
+#def median_dist_test(Samples):
+ ##   Distances = distances(Samples)
+  #  sorted_distances = sorted(Distances)
+  #  l=len(Distances)
+  #  if l%2==0:
+  #      med=1/2*(sorted_distances[int(l/2)]+sorted_distances[int(l/2-1)])
+ #   else:
+ #       med=sorted_distances[(l-1)/2]
+  #  return sorted_distances,med
+
+#def distances(Samples):
+#    Distances = []
+#    for i in range(len(Samples)-1):
+#        for j in range(i+1,len(Samples)):
+#            dist = np.linalg.norm(Samples[i] - Samples[j])
+#            Distances.append(dist)
+#    return Distances
+
+#процедура нахождения медианы расстояний
+def median_distance(Samples):
+    Distances=distance.pdist(Samples)
+    med=median(Distances)
+    return med
+
+def sigma_optimal_shi(Samples):
+    m=median_distance(Samples)
+    sigma=m**2/2
+    return sigma
+
 def main():
     #s=np.loadtxt('UMAP_pr.txt')#читаю данные из файла как матрицу
     s = np.loadtxt('Samples2')  # читаю данные из файла как матрицу
-    s = np.loadtxt('Samples-test')
+    #s = np.loadtxt('Samples-test')
+    #s = np.loadtxt('Samples-test2')
 
     print('my s',s)
     print_graph_matrix(s)
@@ -286,39 +320,20 @@ def main():
     #sigma=0.3
     D=1
 
+    mind, maxd = min_max_dist(s)
+    print('min max', mind, maxd)
+
     sigma_arr=np.array([0.3,0.7,1,2])
     sigma_arr = np.array([0.3, 2])
-    for sigma in sigma_arr:
-        plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
-        plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
+    sigma_arr=np.array([2*mind,3*mind,5*mind])
 
-    #fig, axs=plt.subplots(2)
-    #axs[0].set_title('evkl_density')
-    #axs[1].set_title('boltzmann_potential_evkl')
-    #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'evkl_density')
-    #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_evkl')
-
-
-
-
-
-    #RectSizes=np.ones((len(s),2))
-    #for i in range(len(s)):
-    #    RectSizes[i]=[10*math.pi,1]
-    #print('rect',RectSizes)
-
-
-
-    #вычисление потенциала с помошью Лапласиана графа в точках samples и сглаживание
     #for sigma in sigma_arr:
-    #    PotentialVector = potential_calculation_on_graph(s, P, sigma)
-       # fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
-      #  #plt.title('Smooth PotentialLandscape, sigma='+str(sigma)+'trype of smoothing= homogenous')
-       # draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N,'homogenous',
-        #                              RectSizes,
-        #                              'Smooth PotentialLandscape, sigma='+str(sigma)+'type of smoothing= homogenous')
-        #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles',RectSizes,
-        #                              'Smooth PotentialLandscape, sigma='+str(sigma)+'type of smoothing= rectangles')
+        #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
+        #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
+
+    sigma=sigma_optimal_shi(s)
+    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
+    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
 
 
     #построение и изображение диаграммы Вороного
@@ -346,6 +361,7 @@ def main():
     # plt.show()
     plt.savefig('voronoi_rect.png', format='png')
 
+    #создадим список длин и ширин прямоугольников
     RectSizes = np.ones((len(s), 2))
     for i in range(len(s)):
         if rectangles[i] != 1:
@@ -355,15 +371,38 @@ def main():
     print('rect', RectSizes)
 
     # вычисление потенциала с помошью Лапласиана графа в точках samples и сглаживание
-    for sigma in sigma_arr:
-        PotentialVector = potential_calculation_on_graph(s, P, sigma)
-        draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
-                                      RectSizes,
-                                      'Smooth PotentialLandscape, sigma=' + str(
-                                          sigma) + 'trype of smoothing= homogenous')
-        draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
-                                      'Smooth PotentialLandscape, sigma=' + str(
-                                          sigma) + 'trype of smoothing= rectangles')
+
+    PotentialVector = potential_calculation_on_graph(s, P, sigma)
+    draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
+                                  RectSizes,
+                                  'Smooth PotentialLandscape, sigma=' + str(
+                                   sigma) + 'trype of smoothing= homogenous')
+    draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
+                                  'Smooth PotentialLandscape, sigma=' + str(
+                                   sigma) + 'trype of smoothing= rectangles')
+
+        #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
+                                 #     RectSizes,
+                                #      'Smooth PotentialLandscape, sigma=' + str(
+                                 #         sigma) + 'trype of smoothing= homogenous')
+        #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
+                                 #     'Smooth PotentialLandscape, sigma=' + str(
+                                  #        sigma) + 'trype of smoothing= rectangles')
+    #Distances=distances(s)
+    Distances=distance.pdist(s)
+    #print('Dist',Distances)
+    #print('sort dist',sorted(Distances))
+
+    #sort,med1=median_dist_test(s)
+    med2=median_distance(s)
+
+    #print('sort dist',sort)
+    #print('med-test',med1)
+    print('med2',med2)
+
+
+
+
 
 if __name__ == '__main__':
     main()
