@@ -19,7 +19,7 @@ from scipy.spatial import Delaunay #for tesselation and triangulation
 
 from sympy import *
 from VadimsCodeModified import get_rectangles_inside_voronoi,add_to_plot_voronoi_diagram,\
-    add_to_plot_rectangles
+    add_to_plot_rectangles, calc_rect_area_threshold
 
 from potential_old_version import print_graph_matrix
 
@@ -230,10 +230,69 @@ def sigma_optimal_shi(Samples):
     m=median_distance(Samples)
     return m
 
+#процудура, возвращающая список прямоугольников, вписанных только в ограниченные области
+def get_rectangles_in_bounded_areas(Samples):
+    vor = Voronoi(Samples)
+    rectangles = get_rectangles_inside_voronoi(vor)  # прямоугольники вписанные во все области диаграммы
+    rectangles1 = []  # прямоугольники вписанные только в ограниченные области диаграммы
+    for rect in rectangles:
+        if rect != 1:
+            rectangles1.append(rect)
+    return rectangles1
+
+def get75quartile(rectangles):
+    areas=[]
+    for rect in rectangles:
+        areas.append(rect.area)
+    sort_areas=sorted(areas)#сортирует площади по возрастанию
+    l=len(areas)
+    i=round(3*l/4)
+    quart=sort_areas[i]
+    return quart
+
+
+
+#процудура, возвращающая центр масс многоугольника
+def centroid(coordinates_of_region):
+    #предполагается что вершины перечислены по порядку
+    x_list=[point[0] for point in coordinates_of_region]
+    y_list=[point[1] for point in coordinates_of_region]
+    l=len(coordinates_of_region)
+    x=sum(x_list)/l
+    y=sum(y_list)/l
+    return x,y
+
+
+#процедура, возвращающая список центров многоугольников Ваороново, площадь которых больше чем thresh_area
+def add_points_to_big_areas(vor,rectangles,thresh_area):
+    new_points=[]
+    i = 0
+    for point_region_idx in vor.point_region:
+        coordinates_of_region = \
+            np.asarray([vor.vertices[vert_idx] for vert_idx in vor.regions[point_region_idx]])
+        # print('coord of region',point_region_idx, coordinates_of_region)
+        if rectangles[i] != 1:
+            #print('rect area', rectangles[i].area)
+            if rectangles[i].area > thresh_area:
+                print('this area is large')
+                #print(coordinates_of_region)
+                x,y=centroid(coordinates_of_region)
+                new_points.append([x,y])
+
+        i += 1
+    return new_points
+
+def add_to_plot_points(axs, points):
+    for p in points:
+        axs.scatter(p[0],p[1],color='gold')
+
+
+
+
 def main():
     #s=np.loadtxt('UMAP_pr.txt')#читаю данные из файла как матрицу
     s = np.loadtxt('Samples2')  # читаю данные из файла как матрицу
-    s = np.loadtxt('Samples-test')
+    #s = np.loadtxt('Samples-test')
     #s = np.loadtxt('Samples-test2')
 
     print('my s',s)
@@ -277,8 +336,8 @@ def main():
         #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
 
     sigma=sigma_optimal_shi(s)
-    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
-    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
+    #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
+   # plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
 
 
     #построение и изображение диаграммы Вороного
@@ -299,12 +358,31 @@ def main():
     fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(5, 5), dpi=1000)
     add_to_plot_voronoi_diagram(axs, vor)
 
-    rectangles = get_rectangles_inside_voronoi(vor)
-    print('lenrect', len(rectangles))
+    rectangles = get_rectangles_inside_voronoi(vor)#прямоугольники вписанные во все области диаграммы
+    #print('lenrect', len(rectangles))
 
     add_to_plot_rectangles(axs, rectangles)
     # plt.show()
+    #plt.savefig('voronoi_rect.png', format='png')
+
+    rectangles1 = get_rectangles_in_bounded_areas(s)  # прямоугольники вписанные только в ограниченные области диаграммы
+    print('rect1', rectangles1)
+    quart = get75quartile(rectangles1)
+    print('quart', quart)
+    thresh_area = quart
+    # quart=calc_rect_area_threshold(rectangles1,part_of_distr=0.75)#part_of_distr=0.75
+    # print('quart', quart)
+    added_points=add_points_to_big_areas(vor, rectangles, thresh_area)
+
+    add_to_plot_points(axs, added_points)
+
+
     plt.savefig('voronoi_rect.png', format='png')
+    print('added points',added_points)
+    new_samples=added_points
+    for i in s:
+        new_samples.append([i[0],i[1]])
+    print('new samples',new_samples)
 
     #создадим список длин и ширин прямоугольников
     RectSizes = np.ones((len(s), 2))
@@ -313,31 +391,28 @@ def main():
             RectSizes[i] = [rectangles[i].width, rectangles[i].height]
         else:
             RectSizes[i] = [1, 1]
-    print('rect', RectSizes)
+    print('rectsize', RectSizes)
 
     # вычисление потенциала с помошью Лапласиана графа в точках samples и сглаживание
-
     PotentialVector = potential_calculation_on_graph(s, P, sigma)
-    draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
-                                  RectSizes,
-                                  'Smooth PotentialLandscape, sigma=' + str(
-                                   sigma) + 'trype of smoothing= homogenous')
-    draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
-                                  'Smooth PotentialLandscape, sigma=' + str(
-                                   sigma) + 'trype of smoothing= rectangles')
+    #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
+#                                  RectSizes,
+#                                  'Smooth PotentialLandscape, sigma=' + str(
+#                                   sigma) + 'trype of smoothing= homogenous')
+    #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
+  #                                'Smooth PotentialLandscape, sigma=' + str(
+  #                                 sigma) + 'trype of smoothing= rectangles')
 
-        #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
-                                 #     RectSizes,
-                                #      'Smooth PotentialLandscape, sigma=' + str(
-                                 #         sigma) + 'trype of smoothing= homogenous')
-        #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
-                                 #     'Smooth PotentialLandscape, sigma=' + str(
-                                  #        sigma) + 'trype of smoothing= rectangles')
+
     Distances=distance.pdist(s)
 
     med2=median_distance(s)
 
     print('med2',med2)
+
+    c_of_r=[[0,0],[2,1],[3,2],[1,4],[-1,2]]
+    x,y=centroid(c_of_r)
+    print('centroid',x,y)
 
 
 if __name__ == '__main__':
