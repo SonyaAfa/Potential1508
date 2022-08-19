@@ -21,6 +21,8 @@ from sympy import *
 from VadimsCodeModified import get_rectangles_inside_voronoi,add_to_plot_voronoi_diagram,\
     add_to_plot_rectangles
 
+from potential_old_version import print_graph_matrix
+
 from statistics import median
 
 
@@ -202,44 +204,6 @@ def draw_smooth_functiong_general(x0,x1,hx,y0,y1,hy,Samples,Values,N,type_of_smo
     #ax=sns.heatmap(Z,center=0,cmap='YlGnBu')
     plt.show()
 
-
-#процудура перечисления матриц графа, записывает их  в файл GraphMatrix
-def print_graph_matrix(Samples):
-    df = Samples
-    # Create graph from data. knn - Number of nearest neighbors (including self)
-    G = gt.Graph(df, use_pygsp=True, knn=4)  # df - это матрица KxM в которой хранятся первичные вектора.
-    #print('j', G)
-
-    original_stdout=sys.stdout
-    FileGraphMatrix=open('GraphMatrix','w')
-    sys.stdout=FileGraphMatrix
-    #with open('GridPointsValue','a') as file:
-    print('matrix'+'\n')
-
-    G.A
-    print(' Adjacency matrix: binary version' + '\n')
-    print(np.around(G.A, decimals=2))
-    #print(' Adjacency matrix' + '\n')
-    #print(np.around(G.get_adjacency(), decimals=2))
-    print(' The weighted degree' + '\n')
-    print(np.around(G.dw, decimals=2))
-    print(' Adjacency matrix: K' + '\n')
-    print(np.around(G.K, decimals=2))
-    # вычислим нормализованный лапласиан графа
-    G.compute_laplacian()
-    print(' Laplacian' + '\n')
-    print(np.around(G.L.A, decimals=2))
-    # вычислим нормализованный лапласиан графа и псевдооброатную к нему
-    G.compute_laplacian('normalized')
-    L_K = G.L.A  # матрица - лапласианг графа
-    print(' normalized Laplacian'+'\n')
-    print( np.around(L_K, decimals=2))
-    PsevdoInverseL_K = LA.pinv(L_K)
-    print('PsevdoInverse'+'\n')
-    print(np.around(PsevdoInverseL_K, decimals=2))
-    sys.stdout = original_stdout
-    FileGraphMatrix.close()
-
 #процедура рисующая график плотности или потенциала
 def plot_density(s, x0, y0, x1, y1, h, sigma, D, type):
     X, Y, DensValues = create_function_grid(s, x0, y0, x1, y1, h, h, sigma, D, type)
@@ -256,24 +220,6 @@ def plot_density(s, x0, y0, x1, y1, h, sigma, D, type):
     plot_surface(X, Y, DensValues, fig, ax)
 
 
-#def median_dist_test(Samples):
- ##   Distances = distances(Samples)
-  #  sorted_distances = sorted(Distances)
-  #  l=len(Distances)
-  #  if l%2==0:
-  #      med=1/2*(sorted_distances[int(l/2)]+sorted_distances[int(l/2-1)])
- #   else:
- #       med=sorted_distances[(l-1)/2]
-  #  return sorted_distances,med
-
-#def distances(Samples):
-#    Distances = []
-#    for i in range(len(Samples)-1):
-#        for j in range(i+1,len(Samples)):
-#            dist = np.linalg.norm(Samples[i] - Samples[j])
-#            Distances.append(dist)
-#    return Distances
-
 #процедура нахождения медианы расстояний
 def median_distance(Samples):
     Distances=distance.pdist(Samples)
@@ -282,13 +228,12 @@ def median_distance(Samples):
 
 def sigma_optimal_shi(Samples):
     m=median_distance(Samples)
-    sigma=m**2/2
-    return sigma
+    return m
 
 def main():
     #s=np.loadtxt('UMAP_pr.txt')#читаю данные из файла как матрицу
     s = np.loadtxt('Samples2')  # читаю данные из файла как матрицу
-    #s = np.loadtxt('Samples-test')
+    s = np.loadtxt('Samples-test')
     #s = np.loadtxt('Samples-test2')
 
     print('my s',s)
@@ -388,20 +333,11 @@ def main():
         #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
                                  #     'Smooth PotentialLandscape, sigma=' + str(
                                   #        sigma) + 'trype of smoothing= rectangles')
-    #Distances=distances(s)
     Distances=distance.pdist(s)
-    #print('Dist',Distances)
-    #print('sort dist',sorted(Distances))
 
-    #sort,med1=median_dist_test(s)
     med2=median_distance(s)
 
-    #print('sort dist',sort)
-    #print('med-test',med1)
     print('med2',med2)
-
-
-
 
 
 if __name__ == '__main__':
