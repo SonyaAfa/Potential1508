@@ -274,7 +274,7 @@ def add_points_to_big_areas(vor,rectangles,thresh_area):
         if rectangles[i] != 1:
             #print('rect area', rectangles[i].area)
             if rectangles[i].area > thresh_area:
-                print('this area is large')
+                #print('this area is large')
                 #print(coordinates_of_region)
                 x,y=centroid(coordinates_of_region)
                 new_points.append([x,y])
@@ -287,7 +287,15 @@ def add_to_plot_points(axs, points):
         axs.scatter(p[0],p[1],color='gold')
 
 
-
+def plot_Delaunay(Samples):
+    # триангуляция Делоне
+    s=Samples
+    tri = Delaunay(s)
+    # нарисуем результат триангуляции
+    plt.title('Delaunay triangulation')
+    plt.triplot(s[:, 0], s[:, 1], tri.simplices)
+    plt.plot(s[:, 0], s[:, 1], 'o')
+    plt.show()
 
 def main():
     #s=np.loadtxt('UMAP_pr.txt')#читаю данные из файла как матрицу
@@ -295,7 +303,6 @@ def main():
     #s = np.loadtxt('Samples-test')
     #s = np.loadtxt('Samples-test2')
 
-    print('my s',s)
     print_graph_matrix(s)
 
     df=s
@@ -307,7 +314,7 @@ def main():
     L_K=G.L.A#матрица - лапласианг графа
     #print('Laplacian', L_K)
     PsevdoInverseL_K=LA.pinv(L_K)
-    print('P',np.around(PsevdoInverseL_K,decimals=2))
+    #print('P',np.around(PsevdoInverseL_K,decimals=2))
 
     #нарисуем граф
     G.set_coordinates(kind=s)
@@ -316,45 +323,33 @@ def main():
 
     #DensV=create_small_density_vector(s,m,n,h,x0,y0,GridPoints)
     P=PsevdoInverseL_K#псевдообратная матрица к лапласиану графа
-
-    #плотность
+    # #плотность
     x0,y0,x1,y1=sample_area(s)
     h=0.25
     N=1
-    #sigma=0.3
     D=1
 
-    mind, maxd = min_max_dist(s)
-    print('min max', mind, maxd)
-
-    sigma_arr=np.array([0.3,0.7,1,2])
-    sigma_arr = np.array([0.3, 2])
-    sigma_arr=np.array([2*mind,3*mind,5*mind])
+    #mind, maxd = min_max_dist(s)
+    #sigma_arr=np.array([0.3,0.7,1,2])
+    #sigma_arr = np.array([0.3, 2])
+    #sigma_arr=np.array([2*mind,3*mind,5*mind])
 
     #for sigma in sigma_arr:
         #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
         #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
 
     sigma=sigma_optimal_shi(s)
-    #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
-   # plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
-
+    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
+    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
 
     #построение и изображение диаграммы Вороного
     #draw_voronoi_diagramm(s)
     #print('vorVertices',vor.vertices)#вершины диаграммы Вороного
-    #триангуляция Делоне
-    tri=Delaunay(s)
-    #нарисуем результат триангуляции
-    plt.title('Delaunay triangulation')
-    plt.triplot(s[:,0],s[:,1],tri.simplices)
-    plt.plot(s[:,0],s[:,1],'o')
-    plt.show()
+    #plot_Delaunay(s)
 
     #print(tri.simplices)
     vor = Voronoi(s)
     # кусок из main VadimsCode
-
     fig, axs = plt.subplots(nrows=1, ncols=1, figsize=(5, 5), dpi=1000)
     add_to_plot_voronoi_diagram(axs, vor)
 
@@ -367,22 +362,16 @@ def main():
 
     rectangles1 = get_rectangles_in_bounded_areas(s)  # прямоугольники вписанные только в ограниченные области диаграммы
     print('rect1', rectangles1)
-    quart = get75quartile(rectangles1)
-    print('quart', quart)
-    thresh_area = quart
+    thresh_area = get75quartile(rectangles1)
+    print('quart', thresh_area)
     # quart=calc_rect_area_threshold(rectangles1,part_of_distr=0.75)#part_of_distr=0.75
     # print('quart', quart)
     added_points=add_points_to_big_areas(vor, rectangles, thresh_area)
-
     add_to_plot_points(axs, added_points)
-
 
     plt.savefig('voronoi_rect.png', format='png')
     print('added points',added_points)
-    new_samples=added_points
-    for i in s:
-        new_samples.append([i[0],i[1]])
-    print('new samples',new_samples)
+
 
     #создадим список длин и ширин прямоугольников
     RectSizes = np.ones((len(s), 2))
@@ -395,24 +384,15 @@ def main():
 
     # вычисление потенциала с помошью Лапласиана графа в точках samples и сглаживание
     PotentialVector = potential_calculation_on_graph(s, P, sigma)
-    #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
-#                                  RectSizes,
-#                                  'Smooth PotentialLandscape, sigma=' + str(
-#                                   sigma) + 'trype of smoothing= homogenous')
-    #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
-  #                                'Smooth PotentialLandscape, sigma=' + str(
-  #                                 sigma) + 'trype of smoothing= rectangles')
+    draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
+                                  RectSizes,
+                                  'Smooth PotentialLandscape, sigma=' + str(
+                                  sigma) + 'trype of smoothing= homogenous')
+    draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
+                                  'Smooth PotentialLandscape, sigma=' + str(
+                                   sigma) + 'trype of smoothing= rectangles')
 
 
-    Distances=distance.pdist(s)
-
-    med2=median_distance(s)
-
-    print('med2',med2)
-
-    c_of_r=[[0,0],[2,1],[3,2],[1,4],[-1,2]]
-    x,y=centroid(c_of_r)
-    print('centroid',x,y)
 
 
 if __name__ == '__main__':
