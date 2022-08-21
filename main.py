@@ -24,6 +24,7 @@ from VadimsCodeModified import get_rectangles_inside_voronoi,add_to_plot_voronoi
 from potential_old_version import print_graph_matrix
 
 from statistics import median
+from create_text_files import print_potential_information
 
 
 
@@ -52,6 +53,13 @@ def density(Samples,x,y,sigma):
     for i in Samples:
         d+=gaussian_kernel(x,y,i[0],i[1],sigma)
     return d/len(Samples)
+
+def get_density_vector(Samples,sigma):
+    DensVector=[]
+    for point in Samples:
+        DensVector.append(density(Samples,point[0],point[1],sigma))
+    return DensVector
+
 
 #процудура нахождения плотности в точке (x,y), рассчитаная как сумма квадратов обратных расстояний до  точек Samples
 def evkl_density(Samples,x,y):
@@ -124,7 +132,7 @@ def sample_area(Samples):
     return x0,y0,x1,y1
 
 #создадим вектор плотностей  в samples
-def create_small_density_vector(Samples,sigma):
+def create_density_vector(Samples,sigma):
     DensVector=[]
     for i in Samples:
         DensVector.append(density(Samples,i[0],i[1],sigma))
@@ -134,7 +142,7 @@ def create_small_density_vector(Samples,sigma):
 def potential_calculation_on_graph(Samples,P,sigma):
     '''P --- psevdo inversre matrix for Laplacian'''
     #вычислим список плотностей в точках графа
-    DensVector=create_small_density_vector(Samples,sigma)
+    DensVector=create_density_vector(Samples,sigma)
     PotentialVector=[]
     # вычислим потенциал как P*Dense
     for k in range(len(Samples)):
@@ -297,6 +305,18 @@ def plot_Delaunay(Samples):
     plt.plot(s[:, 0], s[:, 1], 'o')
     plt.show()
 
+# создадим список длин и ширин прямоугольников
+def create_rectsizes(Samples,rectangles):
+    s=Samples
+    RectSizes = np.ones((len(s), 2))
+    for i in range(len(s)):
+        if rectangles[i] != 1:
+            RectSizes[i] = [rectangles[i].width, rectangles[i].height]
+        else:
+            RectSizes[i] = [1, 1]
+    return RectSizes
+    #print('rectsize', RectSizes)
+
 def main():
     #s=np.loadtxt('UMAP_pr.txt')#читаю данные из файла как матрицу
     s = np.loadtxt('Samples2')  # читаю данные из файла как матрицу
@@ -307,7 +327,7 @@ def main():
 
     df=s
     #Create graph from data. knn - Number of nearest neighbors (including self)
-    G = gt.Graph(df, use_pygsp=True, knn=4)#df - это матрица KxM в которой хранятся первичные вектора.
+    G = gt.Graph(df, use_pygsp=True, knn=5)#df - это матрица KxM в которой хранятся первичные вектора.
     G.A
     #вычислим нормализованный лапласиан графа и псевдооброатную к нему
     G.compute_laplacian('normalized')
@@ -325,9 +345,9 @@ def main():
     P=PsevdoInverseL_K#псевдообратная матрица к лапласиану графа
     # #плотность
     x0,y0,x1,y1=sample_area(s)
-    h=0.25
-    N=1
-    D=1
+    h=0.25 #шаг для построения картинок
+    N=1 #параметр для сглаживания
+    D=1 #параметр диффузии
 
     #mind, maxd = min_max_dist(s)
     #sigma_arr=np.array([0.3,0.7,1,2])
@@ -357,8 +377,6 @@ def main():
     #print('lenrect', len(rectangles))
 
     add_to_plot_rectangles(axs, rectangles)
-    # plt.show()
-    #plt.savefig('voronoi_rect.png', format='png')
 
     rectangles1 = get_rectangles_in_bounded_areas(s)  # прямоугольники вписанные только в ограниченные области диаграммы
     print('rect1', rectangles1)
@@ -372,14 +390,7 @@ def main():
     plt.savefig('voronoi_rect.png', format='png')
     print('added points',added_points)
 
-
-    #создадим список длин и ширин прямоугольников
-    RectSizes = np.ones((len(s), 2))
-    for i in range(len(s)):
-        if rectangles[i] != 1:
-            RectSizes[i] = [rectangles[i].width, rectangles[i].height]
-        else:
-            RectSizes[i] = [1, 1]
+    RectSizes=create_rectsizes(s,rectangles)
     print('rectsize', RectSizes)
 
     # вычисление потенциала с помошью Лапласиана графа в точках samples и сглаживание
@@ -388,12 +399,13 @@ def main():
                                   RectSizes,
                                   'Smooth PotentialLandscape, sigma=' + str(
                                   sigma) + 'trype of smoothing= homogenous')
-    draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
-                                  'Smooth PotentialLandscape, sigma=' + str(
-                                   sigma) + 'trype of smoothing= rectangles')
+    #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
+     #                             'Smooth PotentialLandscape, sigma=' + str(
+      #                             sigma) + 'trype of smoothing= rectangles')
 
-
-
+    #азпишем информацию в файл
+    DensVector=get_density_vector(s, sigma)
+    print_potential_information(s,PotentialVector,DensVector,sigma)
 
 if __name__ == '__main__':
     main()
