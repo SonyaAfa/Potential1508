@@ -156,7 +156,14 @@
       <option name="project" value="LOCAL" />
       <updated>1661002166718</updated>
     </task>
-    <option name="localTasksCounter" value="15" />
+    <task id="LOCAL-00015" summary="добавляю на картинку с прямоугольниками - середины многоугольников вороного, чьи прямоугольники слишком большие&#10;&#10;и убрае мусор всякий">
+      <created>1661041754552</created>
+      <option name="number" value="00015" />
+      <option name="presentableId" value="LOCAL-00015" />
+      <option name="project" value="LOCAL" />
+      <updated>1661041754553</updated>
+    </task>
+    <option name="localTasksCounter" value="16" />
     <servers />
   </component>
   <component name="Vcs.Log.Tabs.Properties">

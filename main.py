@@ -25,7 +25,7 @@ from potential_old_version import print_graph_matrix
 
 from statistics import median
 from create_text_files import print_potential_information
-
+from my_geometry import sample_area,median_distance,sigma_optimal_shi,centroid,create_rectsizes
 
 
 #процедура вычисляющая наименьшее и наибольшее расстояние между точками
@@ -74,6 +74,7 @@ def evkl_density(Samples,x,y):
             print('point is sample point')
     return d
 
+
 #процедура создающая массивы точек (и значений в них), чтобы по ним нарисовать график
 #type= определяет значения какой функции брать
 def create_function_grid(Samples,x0,y0,x1,y1,hx,hy,sigma,D,type):
@@ -93,6 +94,8 @@ def create_function_grid(Samples,x0,y0,x1,y1,hx,hy,sigma,D,type):
             if type=='boltzmann_potential_evkl':
                 Dens_values[t, l] =boltzmann_potential(x0 + l * hx, y0 + t * hy, Samples, sigma, D,'evkl_density')
     return X,Y,Dens_values
+
+
 
 
 #рисование поверхности по точкам
@@ -119,44 +122,9 @@ def plot_surface(X, Y, Z,fig,ax):
 
     return 0
 
-#процудура нахождения прямоугольника, внутри которого находятся все samples
-def sample_area(Samples):
-    '''create grid
-    (x0,y0) --- left down corner'''
-    #находим левый нижний (x0,y0) и правый верхний (x1,y1) узла графа. (x0,y0) --- левый нижний угол сетки
-    x0=min(Samples, key=lambda j:j[0])[0]
-    x1=max(Samples, key=lambda j:j[0])[0]
-    y0=min(Samples, key=lambda j:j[1])[1]
-    y1=max(Samples, key=lambda j:j[1])[1]
 
-    return x0,y0,x1,y1
 
-#создадим вектор плотностей  в samples
-def create_density_vector(Samples,sigma):
-    DensVector=[]
-    for i in Samples:
-        DensVector.append(density(Samples,i[0],i[1],sigma))
-    return DensVector
 
-#процудура вычисления потенциала в точках графа
-def potential_calculation_on_graph(Samples,P,sigma):
-    '''P --- psevdo inversre matrix for Laplacian'''
-    #вычислим список плотностей в точках графа
-    DensVector=create_density_vector(Samples,sigma)
-    PotentialVector=[]
-    # вычислим потенциал как P*Dense
-    for k in range(len(Samples)):
-        PotentialVector.append(np.dot(P[k],DensVector))
-    return PotentialVector
-
-#процедура, возвращающая потенциал по формуле Больцмана U=-Dln p(x,y),
-# где p - плотность с параметром sigma
-def boltzmann_potential(x,y,Samples,sigma,D,type):
-    if type=='gaussian_density':
-        u = -D * np.log(density(Samples, x, y, sigma))
-    if type=='evkl_density':
-        u = -D * np.log(evkl_density(Samples, x, y))
-    return u
 
 
 def sinc(x,N):
@@ -218,25 +186,64 @@ def plot_density(s, x0, y0, x1, y1, h, sigma, D, type):
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
     #plt.title('Density sigma=%i'%sigma)
     if type=='gaussian_density':
-        plt.title('Density, sigma=' + str(sigma))
+        plt.title('Density, sigma=' + str(np.around(sigma,2)))
     if type=='evkl_density':
         plt.title('Density evkl')
     if type=='boltzmann_potential_gaussian':
-        plt.title('boltzmann_potential_gaussian, sigma='+str(sigma))
+        plt.title('boltzmann_potential_gaussian,'+ '\n'+' sigma='+str(np.around(sigma,2)))
     if type == 'boltzmann_potential_evkl':
         plt.title('boltzmann_potential_evkl')
     plot_surface(X, Y, DensValues, fig, ax)
 
 
-#процедура нахождения медианы расстояний
-def median_distance(Samples):
-    Distances=distance.pdist(Samples)
-    med=median(Distances)
-    return med
 
-def sigma_optimal_shi(Samples):
-    m=median_distance(Samples)
-    return m
+
+
+
+
+def add_to_plot_points(axs, points):
+    for p in points:
+        axs.scatter(p[0],p[1],color='gold')
+
+
+def plot_Delaunay(Samples):
+    # триангуляция Делоне
+    s=Samples
+    tri = Delaunay(s)
+    # нарисуем результат триангуляции
+    plt.title('Delaunay triangulation')
+    plt.triplot(s[:, 0], s[:, 1], tri.simplices)
+    plt.plot(s[:, 0], s[:, 1], 'o')
+    plt.show()
+
+
+#создадим вектор плотностей  в samples
+def create_density_vector(Samples,sigma):
+    DensVector=[]
+    for i in Samples:
+        DensVector.append(density(Samples,i[0],i[1],sigma))
+    return DensVector
+
+#процудура вычисления потенциала в точках графа
+def potential_calculation_on_graph(Samples,P,sigma):
+    '''P --- psevdo inversre matrix for Laplacian'''
+    #вычислим список плотностей в точках графа
+    DensVector=create_density_vector(Samples,sigma)
+    PotentialVector=[]
+    # вычислим потенциал как P*Dense
+    for k in range(len(Samples)):
+        PotentialVector.append(np.dot(P[k],DensVector))
+    return PotentialVector
+
+#процедура, возвращающая потенциал по формуле Больцмана U=-Dln p(x,y),
+# где p - плотность с параметром sigma
+def boltzmann_potential(x,y,Samples,sigma,D,type):
+    if type=='gaussian_density':
+        u = -D * np.log(density(Samples, x, y, sigma))
+    if type=='evkl_density':
+        u = -D * np.log(evkl_density(Samples, x, y))
+    return u
+
 
 #процудура, возвращающая список прямоугольников, вписанных только в ограниченные области
 def get_rectangles_in_bounded_areas(Samples):
@@ -258,19 +265,6 @@ def get75quartile(rectangles):
     quart=sort_areas[i]
     return quart
 
-
-
-#процудура, возвращающая центр масс многоугольника
-def centroid(coordinates_of_region):
-    #предполагается что вершины перечислены по порядку
-    x_list=[point[0] for point in coordinates_of_region]
-    y_list=[point[1] for point in coordinates_of_region]
-    l=len(coordinates_of_region)
-    x=sum(x_list)/l
-    y=sum(y_list)/l
-    return x,y
-
-
 #процедура, возвращающая список центров многоугольников Ваороново, площадь которых больше чем thresh_area
 def add_points_to_big_areas(vor,rectangles,thresh_area):
     new_points=[]
@@ -290,32 +284,11 @@ def add_points_to_big_areas(vor,rectangles,thresh_area):
         i += 1
     return new_points
 
-def add_to_plot_points(axs, points):
-    for p in points:
-        axs.scatter(p[0],p[1],color='gold')
-
-
-def plot_Delaunay(Samples):
-    # триангуляция Делоне
-    s=Samples
-    tri = Delaunay(s)
-    # нарисуем результат триангуляции
-    plt.title('Delaunay triangulation')
-    plt.triplot(s[:, 0], s[:, 1], tri.simplices)
-    plt.plot(s[:, 0], s[:, 1], 'o')
-    plt.show()
-
-# создадим список длин и ширин прямоугольников
-def create_rectsizes(Samples,rectangles):
-    s=Samples
-    RectSizes = np.ones((len(s), 2))
-    for i in range(len(s)):
-        if rectangles[i] != 1:
-            RectSizes[i] = [rectangles[i].width, rectangles[i].height]
-        else:
-            RectSizes[i] = [1, 1]
-    return RectSizes
-    #print('rectsize', RectSizes)
+#процедура объединяющая наборы точек и значений
+def extended_point_set(s1,s2,v1,v2):
+    s=np.concatenate((s1,s2),axis=0)
+    v=np.concatenate((v1,v2),axis=0)
+    return s,v
 
 def main():
     #s=np.loadtxt('UMAP_pr.txt')#читаю данные из файла как матрицу
@@ -388,6 +361,9 @@ def main():
     add_to_plot_points(axs, added_points)
 
     plt.savefig('voronoi_rect.png', format='png')
+
+
+
     print('added points',added_points)
 
     RectSizes=create_rectsizes(s,rectangles)
@@ -397,8 +373,7 @@ def main():
     PotentialVector = potential_calculation_on_graph(s, P, sigma)
     draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
                                   RectSizes,
-                                  'Smooth PotentialLandscape, sigma=' + str(
-                                  sigma) + 'trype of smoothing= homogenous')
+                                  'Smooth PotentialLandscape,'+ '\n'+' sigma=' + str(np.around(sigma,2))+ '\n' + 'type of smoothing= homogenous')
     #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
      #                             'Smooth PotentialLandscape, sigma=' + str(
       #                             sigma) + 'trype of smoothing= rectangles')
@@ -406,6 +381,20 @@ def main():
     #азпишем информацию в файл
     DensVector=get_density_vector(s, sigma)
     print_potential_information(s,PotentialVector,DensVector,sigma)
+
+    added_densities=get_density_vector(added_points,sigma)
+    added_values =np.zeros(len(added_densities))
+    for i in range(len(added_densities)):
+        added_values[i]=0.5#-added_densities[i]
+    #added_values=np.ones(len(added_points))#положим значение потенциплп=1 во всех новых точках
+    extended_s,extended_v=extended_point_set(s,added_points,PotentialVector,added_values)
+    draw_smooth_functiong_general(x0,x1,h,y0,y1,h,extended_s,extended_v,N,'homogenous',
+                                  RectSizes,
+                                  'Extended PotentialLandscape,'+ '\n'+' sigma=' + str(np.around(sigma,2))+ '\n'
+                                  + 'type of smoothing= homogenous')
+
+
+
 
 if __name__ == '__main__':
     main()
