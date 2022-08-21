@@ -16,6 +16,7 @@ from matplotlib import cm
 from matplotlib.ticker import LinearLocator
 import sys #для записи в файл
 from scipy.spatial import Delaunay #for tesselation and triangulation
+import seaborn as sns #for heatmap
 
 from sympy import *
 from VadimsCodeModified import get_rectangles_inside_voronoi,add_to_plot_voronoi_diagram,\
@@ -26,7 +27,7 @@ from potential_old_version import print_graph_matrix
 from statistics import median
 from create_text_files import print_potential_information
 from my_geometry import sample_area,median_distance,sigma_optimal_shi,centroid,create_rectsizes
-
+import pandas as pd
 
 #процедура вычисляющая наименьшее и наибольшее расстояние между точками
 def min_max_dist(Samples):
@@ -158,8 +159,9 @@ def smoothing_function_size_sinc(Samples,Values,x,y,RectSizes):
 
 
 #нарисуем гладкую картинку
-def draw_smooth_functiong_general(x0,x1,hx,y0,y1,hy,Samples,Values,N,type_of_smoothing,RectSizes,tit):#
+def draw_smooth_functiong_general(x0,x1,hx,y0,y1,hy,Samples,Values,N,type_of_smoothing,RectSizes,tit,show):#
     #tit - заглавие картинки
+    #show=true - процедура покажет картинку
     fig, ax = plt.subplots(subplot_kw={"projection": "3d"})
     plt.title(tit)
     # Диапазоны по оси X и Y:
@@ -177,8 +179,20 @@ def draw_smooth_functiong_general(x0,x1,hx,y0,y1,hy,Samples,Values,N,type_of_smo
             if type_of_smoothing == 'rectangles':
                 Z[t, l] = smoothing_function_size_sinc(Samples,Values,x0+l*hx,y0+t*hy,RectSizes)
     plot_surface(X, Y, Z,fig,ax)
-    #ax=sns.heatmap(Z,center=0,cmap='YlGnBu')
-    plt.show()
+    #ax=\
+    #fig, axs = plt.subplots(nrows=1, ncols=1)#, figsize=(5, 5), dpi=1000)#new
+
+    #sns.heatmap(Z,center=0,cmap='YlGnBu')
+
+    fig, axs = plt.subplots(nrows=1, ncols=1)#, figsize=(5, 5), dpi=1000)#new
+    axs.pcolormesh(X,Y,Z)
+    axs.set_frame_on(False)
+
+    if show:
+        plt.show()
+    return axs
+
+
 
 #процедура рисующая график плотности или потенциала
 def plot_density(s, x0, y0, x1, y1, h, sigma, D, type):
@@ -201,9 +215,9 @@ def plot_density(s, x0, y0, x1, y1, h, sigma, D, type):
 
 
 
-def add_to_plot_points(axs, points):
+def add_to_plot_points(axs, points,clr):
     for p in points:
-        axs.scatter(p[0],p[1],color='gold')
+        axs.scatter(p[0],p[1],color=clr)
 
 
 def plot_Delaunay(Samples):
@@ -319,7 +333,7 @@ def main():
     # #плотность
     x0,y0,x1,y1=sample_area(s)
     h=0.25 #шаг для построения картинок
-    N=1 #параметр для сглаживания
+    N=1/2 #параметр для сглаживания
     D=1 #параметр диффузии
 
     #mind, maxd = min_max_dist(s)
@@ -332,8 +346,8 @@ def main():
         #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
 
     sigma=sigma_optimal_shi(s)
-    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
-    plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
+    #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'gaussian_density')
+    #plot_density(s, x0, y0, x1, y1, h, sigma, D, 'boltzmann_potential_gaussian')
 
     #построение и изображение диаграммы Вороного
     #draw_voronoi_diagramm(s)
@@ -358,7 +372,7 @@ def main():
     # quart=calc_rect_area_threshold(rectangles1,part_of_distr=0.75)#part_of_distr=0.75
     # print('quart', quart)
     added_points=add_points_to_big_areas(vor, rectangles, thresh_area)
-    add_to_plot_points(axs, added_points)
+    add_to_plot_points(axs, added_points,'gold')
 
     plt.savefig('voronoi_rect.png', format='png')
 
@@ -371,9 +385,12 @@ def main():
 
     # вычисление потенциала с помошью Лапласиана графа в точках samples и сглаживание
     PotentialVector = potential_calculation_on_graph(s, P, sigma)
-    draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
+    ax=draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'homogenous',
                                   RectSizes,
-                                  'Smooth PotentialLandscape,'+ '\n'+' sigma=' + str(np.around(sigma,2))+ '\n' + 'type of smoothing= homogenous')
+                                  'Smooth PotentialLandscape,'+ '\n'+' sigma=' + str(np.around(sigma,2))+ '\n' + 'type of smoothing= homogenous',false)
+    add_to_plot_points(ax,s,'black')
+    plt.show()
+
     #draw_smooth_functiong_general(x0, x1, h, y0, y1, h, s, PotentialVector, N, 'rectangles', RectSizes,
      #                             'Smooth PotentialLandscape, sigma=' + str(
       #                             sigma) + 'trype of smoothing= rectangles')
@@ -388,10 +405,12 @@ def main():
         added_values[i]=0.5#-added_densities[i]
     #added_values=np.ones(len(added_points))#положим значение потенциплп=1 во всех новых точках
     extended_s,extended_v=extended_point_set(s,added_points,PotentialVector,added_values)
-    draw_smooth_functiong_general(x0,x1,h,y0,y1,h,extended_s,extended_v,N,'homogenous',
+    ax=draw_smooth_functiong_general(x0,x1,h,y0,y1,h,extended_s,extended_v,N,'homogenous',
                                   RectSizes,
                                   'Extended PotentialLandscape,'+ '\n'+' sigma=' + str(np.around(sigma,2))+ '\n'
-                                  + 'type of smoothing= homogenous')
+                                  + 'type of smoothing= homogenous',false)
+    add_to_plot_points(ax, s, 'black')
+    plt.show()
 
 
 
